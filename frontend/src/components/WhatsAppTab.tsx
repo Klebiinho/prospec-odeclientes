@@ -202,6 +202,27 @@ export function WhatsAppTab({
               />
               <label htmlFor="auto_approve_messages" style={{ cursor: "pointer" }}>Aprovar Mensagens da IA Automaticamente</label>
             </div>
+            <div>
+              <label style={{ display: "block", marginBottom: "0.5rem" }}>Voz de Síntese Kokoro</label>
+              <select 
+                className="search-bar__select" 
+                value={settings.kokoro_voice || "pf_dora"} 
+                onChange={e => setSettings({...settings, kokoro_voice: e.target.value})} 
+                style={{ width: "100%" }}
+              >
+                <optgroup label="Português (BR)">
+                  <option value="pf_dora">Dora (Feminino)</option>
+                  <option value="pf_leticia">Letícia (Feminino)</option>
+                  <option value="pf_julia">Júlia (Feminino)</option>
+                  <option value="pm_alex">Alex (Masculino)</option>
+                  <option value="pm_rafael">Rafael (Masculino)</option>
+                </optgroup>
+                <optgroup label="Francês">
+                  <option value="ff_siara">Siara (Feminino)</option>
+                  <option value="fm_claude">Claude (Masculino)</option>
+                </optgroup>
+              </select>
+            </div>
             <button className="search-bar__btn" type="submit" disabled={savingSettings}>
               {savingSettings ? "Salvando..." : "Salvar Configurações"}
             </button>

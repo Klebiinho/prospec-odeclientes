@@ -158,6 +158,7 @@ class WhatsAppSettingsRequest(BaseModel):
     global_api_key: str = Field(..., description="Evolution API Global Key")
     instance_name: str = Field("prospec_ode", description="Instance Name")
     auto_approve_messages: bool = Field(False, description="Auto approve AI generated messages")
+    kokoro_voice: str = Field("pf_dora", description="Voice for Kokoro TTS")
 
 class MessageTemplateResponse(BaseModel):
     id: str
@@ -887,6 +888,7 @@ async def save_whatsapp_settings(settings: WhatsAppSettingsRequest):
             "global_api_key": settings.global_api_key,
             "instance_name": settings.instance_name,
             "auto_approve_messages": settings.auto_approve_messages,
+            "kokoro_voice": settings.kokoro_voice,
             "updated_at": datetime.now(timezone.utc).isoformat()
         }).eq("id", res.data[0]["id"]).execute()  # type: ignore
         if updated.data and isinstance(updated.data, list):
@@ -897,7 +899,8 @@ async def save_whatsapp_settings(settings: WhatsAppSettingsRequest):
             "url": settings.url,
             "global_api_key": settings.global_api_key,
             "instance_name": settings.instance_name,
-            "auto_approve_messages": settings.auto_approve_messages
+            "auto_approve_messages": settings.auto_approve_messages,
+            "kokoro_voice": settings.kokoro_voice
         }).execute()
         if inserted.data and isinstance(inserted.data, list):
             return inserted.data[0]  # type: ignore
@@ -1081,7 +1084,9 @@ async def send_whatsapp_audio(request: SendAudioRequest):
     # Generate Audio Base64
     try:
         from tts import text_to_speech_base64
-        audio_base64 = await text_to_speech_base64(text)
+        kokoro_voice = settings.get("kokoro_voice", "pf_dora")
+        lang = "f" if kokoro_voice.startswith("f") else "pt"
+        audio_base64 = await text_to_speech_base64(text, lang=lang, voice=kokoro_voice)
         audio_uri = audio_base64
     except Exception as e:
         logger.error(f"TTS generation error: {e}")

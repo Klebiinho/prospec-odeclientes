@@ -67,6 +67,7 @@ export interface WhatsAppSettings {
   global_api_key: string;
   instance_name: string;
   auto_approve_messages?: boolean;
+  kokoro_voice?: string;
 }
 
 export interface WhatsAppTemplate {

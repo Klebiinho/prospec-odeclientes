@@ -183,7 +183,7 @@ function LeadCard({
   const menuRef = useRef<HTMLDivElement>(null);
   const [approvalModal, setApprovalModal] = useState(false);
   const [generatedText, setGeneratedText] = useState("");
-  const [selectedAction, setSelectedAction] = useState<"api_text" | "api_audio">("api_text");
+  const [selectedAction, setSelectedAction] = useState<"api_text" | "api_audio" | "manual">("api_text");
 
   const copyPhone = () => {
     if (lead.phone) {
@@ -202,9 +202,17 @@ function LeadCard({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleOptionClick = async (action: "web" | "api_text" | "api_audio") => {
+  const handleOptionClick = async (action: "web" | "api_text" | "api_audio" | "manual") => {
     setShowMenu(false);
     if (!lead.phone) return;
+
+    if (action === "manual") {
+      setGeneratedText("");
+      setSelectedAction(action);
+      setApprovalModal(true);
+      return;
+    }
+
     try {
       setGenerating(true);
       onToast("Gerando mensagem personalizada com IA...", "info");
@@ -247,23 +255,22 @@ function LeadCard({
     }
   };
 
-  const handleConfirmSend = async () => {
-    setApprovalModal(false);
+  const handleConfirmSend = async (overrideAction?: "api_text" | "api_audio") => {
     try {
-      setGenerating(true);
-      if (selectedAction === "api_text") {
-        onToast("Enviando mensagem de texto...", "info");
+      const finalAction = overrideAction || selectedAction;
+      setApprovalModal(false);
+      onToast(finalAction === "api_audio" ? "Sintetizando áudio e enviando..." : "Enviando mensagem de texto...", "info");
+      
+      if (finalAction === "api_text") {
         await api.sendMessage(lead.id, generatedText);
-        onToggleContacted(lead.id, true);
         onToast("Mensagem de texto enviada pelo WhatsApp!", "success");
-      } else if (selectedAction === "api_audio") {
-        onToast("Sintetizando áudio e enviando...", "info");
+      } else if (finalAction === "api_audio") {
         await api.sendWhatsAppAudio(lead.id, generatedText);
-        onToggleContacted(lead.id, true);
         onToast("Mensagem de áudio enviada pelo WhatsApp!", "success");
       }
+      onToggleContacted(lead.id, true);
     } catch (err: any) {
-      onToast(err.message || "Erro ao enviar mensagem.", "error");
+      onToast(err.message || "Erro ao processar envio.", "error");
     } finally {
       setGenerating(false);
     }
@@ -424,6 +431,24 @@ function LeadCard({
                   >
                     🎙️ Áudio de Voz (IA)
                   </button>
+                  <button
+                    onClick={() => handleOptionClick("manual")}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "var(--text-primary)",
+                      padding: "10px 16px",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      fontSize: "var(--font-size-sm)",
+                      transition: "background var(--transition-fast)",
+                      borderTop: "1px solid var(--border)"
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-glass-strong)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+                  >
+                    ✍️ Escrever Manualmente
+                  </button>
                 </div>
               )}
             </div>
@@ -455,31 +480,58 @@ function LeadCard({
           background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex",
           alignItems: "center", justifyContent: "center"
         }}>
-          <div className="card" style={{ padding: "2rem", width: "90%", maxWidth: "500px", display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <h3>Revisar Mensagem ({selectedAction === "api_audio" ? "Áudio" : "Texto"})</h3>
-            <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
-              Edite a mensagem abaixo se necessário antes de enviar.
+          <div className="card" style={{ padding: "2rem", width: "95%", maxWidth: "600px", display: "flex", flexDirection: "column", gap: "1rem", maxHeight: "90vh", overflowY: "auto" }}>
+            <h3>
+              {selectedAction === "manual" ? "Escrever Mensagem Manual" : `Revisar Mensagem (${selectedAction === "api_audio" ? "Áudio" : "Texto"})`}
+            </h3>
+            <p style={{ fontSize: "1rem", color: "var(--text-secondary)" }}>
+              {selectedAction === "manual" ? "Digite a mensagem que deseja enviar:" : "Edite a mensagem abaixo se necessário antes de enviar."}
             </p>
             <textarea
               className="search-bar__input"
-              style={{ minHeight: "150px", resize: "vertical" }}
+              style={{ minHeight: "200px", resize: "vertical", fontSize: "1rem", padding: "1rem" }}
               value={generatedText}
               onChange={(e) => setGeneratedText(e.target.value)}
+              placeholder="Digite aqui..."
             />
-            <div style={{ display: "flex", gap: "1rem", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "flex-end", marginTop: "1rem" }}>
               <button 
                 className="btn btn-secondary" 
-                style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", color: "var(--text)", cursor: "pointer" }}
+                style={{ padding: "0.8rem 1.5rem", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", color: "var(--text)", cursor: "pointer", fontWeight: "bold" }}
                 onClick={() => setApprovalModal(false)}
               >
                 Cancelar
               </button>
-              <button 
-                className="search-bar__btn" 
-                onClick={handleConfirmSend}
-              >
-                Confirmar e Enviar
-              </button>
+              
+              {selectedAction === "manual" ? (
+                <>
+                  <button 
+                    className="search-bar__btn" 
+                    style={{ padding: "0.8rem 1.5rem", fontSize: "1rem" }}
+                    onClick={() => handleConfirmSend("api_text")}
+                    disabled={!generatedText.trim()}
+                  >
+                    📲 Enviar como Texto
+                  </button>
+                  <button 
+                    className="search-bar__btn" 
+                    style={{ padding: "0.8rem 1.5rem", fontSize: "1rem", backgroundColor: "var(--primary-dark)" }}
+                    onClick={() => handleConfirmSend("api_audio")}
+                    disabled={!generatedText.trim()}
+                  >
+                    🎙️ Enviar como Áudio
+                  </button>
+                </>
+              ) : (
+                <button 
+                  className="search-bar__btn" 
+                  style={{ padding: "0.8rem 1.5rem", fontSize: "1rem" }}
+                  onClick={() => handleConfirmSend()}
+                  disabled={!generatedText.trim()}
+                >
+                  Confirmar e Enviar
+                </button>
+              )}
             </div>
           </div>
         </div>

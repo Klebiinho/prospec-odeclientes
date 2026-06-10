@@ -20,9 +20,10 @@ logger = logging.getLogger(__name__)
 # Lazy initialization of KPipeline
 _kokoro_pipeline_pt = None
 _kokoro_pipeline_en = None
+_kokoro_pipeline_fr = None
 
 def get_kokoro_pipeline(lang: str):
-    global _kokoro_pipeline_pt, _kokoro_pipeline_en
+    global _kokoro_pipeline_pt, _kokoro_pipeline_en, _kokoro_pipeline_fr
     if KPipeline is None:
         raise Exception("Kokoro is not installed")
         
@@ -31,6 +32,11 @@ def get_kokoro_pipeline(lang: str):
             logger.info("Initializing Kokoro pipeline for Portuguese (p)")
             _kokoro_pipeline_pt = KPipeline(lang_code='p')
         return _kokoro_pipeline_pt
+    elif lang.startswith("f"):
+        if _kokoro_pipeline_fr is None:
+            logger.info("Initializing Kokoro pipeline for French (f)")
+            _kokoro_pipeline_fr = KPipeline(lang_code='f')
+        return _kokoro_pipeline_fr
     else:
         if _kokoro_pipeline_en is None:
             logger.info("Initializing Kokoro pipeline for English (a)")
