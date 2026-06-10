@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { api, type Lead, type Search, type Stats } from "@/lib/api";
 import { WhatsAppTab } from "@/components/WhatsAppTab";
 
@@ -184,6 +185,11 @@ function LeadCard({
   const [approvalModal, setApprovalModal] = useState(false);
   const [generatedText, setGeneratedText] = useState("");
   const [selectedAction, setSelectedAction] = useState<"api_text" | "api_audio" | "manual">("api_text");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const copyPhone = () => {
     if (lead.phone) {
@@ -474,7 +480,7 @@ function LeadCard({
         </div>
       </div>
 
-      {approvalModal && (
+      {mounted && approvalModal && createPortal(
         <div className="modal-overlay" style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
           background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex",
@@ -534,7 +540,8 @@ function LeadCard({
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
