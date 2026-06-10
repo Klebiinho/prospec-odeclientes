@@ -85,7 +85,7 @@ async def kokoro_text_to_speech_base64(text: str, lang: str = "pt", voice: str =
     logger.info("Kokoro TTS synthesis complete")
     return base64.b64encode(fp.read()).decode("utf-8")
 
-async def text_to_speech_base64(text: str, lang: str = "pt") -> str:
+async def text_to_speech_base64(text: str, lang: str = "pt", voice: str = "") -> str:
     """
     Converts a text string to an audio file.
     Priority:
@@ -99,7 +99,7 @@ async def text_to_speech_base64(text: str, lang: str = "pt") -> str:
     if KPipeline is not None:
         try:
             logger.info(f"Synthesizing text using Kokoro: '{text[:50]}...'")
-            return await kokoro_text_to_speech_base64(text, lang)
+            return await kokoro_text_to_speech_base64(text, lang, voice=voice)
         except Exception as e:
             logger.error(f"Error generating Kokoro TTS: {e}. Falling back to Miso One/gTTS.")
             
@@ -108,7 +108,7 @@ async def text_to_speech_base64(text: str, lang: str = "pt") -> str:
     if miso_cookie:
         try:
             logger.info(f"Synthesizing text using Miso One (Omnivoice) TTS: '{text[:50]}...'")
-            return await miso_one_text_to_speech_base64(text, miso_cookie, lang)
+            return await miso_one_text_to_speech_base64(text, miso_cookie, lang, voice=voice if voice else "Adam")
         except Exception as e:
             logger.error(f"Error generating Miso One TTS: {e}. Falling back to gTTS.")
     
