@@ -1,20 +1,7 @@
-const getApiBase = (): string => {
-  if (process.env.NEXT_PUBLIC_SCRAPER_API_URL) {
-    return process.env.NEXT_PUBLIC_SCRAPER_API_URL;
-  }
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    // Default to relative path if on vercel/production, so Next.js rewrites handle it.
-    // If local development, use localhost:8000
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return `http://${host}:8000`;
-    }
-    return "";
-  }
-  return "";
-};
-
-const API_BASE = getApiBase();
+// Always use relative paths so requests go through Next.js API routes.
+// On Vercel: API routes query Supabase directly or proxy to SCRAPER_API_URL.
+// On localhost: API routes do the same but SCRAPER_API_URL defaults to localhost:8000.
+const API_BASE = "";
 
 interface SearchRequest {
   query: string;
